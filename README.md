@@ -22,7 +22,7 @@ this library is not final.*
 
 ## Usage
 To create a plugin, simply create a type which implements `plugin::Plugin` and
-`std::default::Default`. Then call the macro `plugin_main!`, which will export
+`NewFromHost`. Then call the macro `plugin_main!`, which will export
 the necessary functions and handle dealing with the rest of the API.
 
 ## Example Plugin
@@ -82,7 +82,7 @@ crate-type = ["dylib"]
 
 #### Packaging on OS X
 
-On OS X VST plugins are packaged inside of loadable bundles. 
+On OS X VST plugins are packaged inside of loadable bundles.
 To package your VST as a loadable bundle you may use the `osx_vst_bundler.sh` script this library provides. 
 
 Example: 

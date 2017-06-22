@@ -22,10 +22,16 @@
 //! #[macro_use]
 //! extern crate vst2;
 //!
-//! use vst2::plugin::{Info, Plugin};
+//! use vst2::plugin::{Info, Plugin, NewFromHost, HostCallback};
 //!
 //! #[derive(Default)]
 //! struct BasicPlugin;
+//!
+//! impl NewFromHost for BasicPlugin {
+//!     fn new(host: HostCallback) -> Self {
+//!         Default::default()
+//!     }
+//! }
 //!
 //! impl Plugin for BasicPlugin {
 //!     fn get_info(&self) -> Info {
@@ -137,7 +143,7 @@ mod cache;
 
 use api::{HostCallbackProc, AEffect};
 use api::consts::VST_MAGIC;
-use plugin::{HostCallback, Plugin};
+use plugin::{HostCallback, Plugin, NewFromHost};
 use cache::PluginCache;
 
 /// Exports the necessary symbols for the plugin to be used by a VST host.
@@ -170,7 +176,7 @@ macro_rules! plugin_main {
 
 /// Initializes a VST plugin and returns a raw pointer to an AEffect struct.
 #[doc(hidden)]
-pub fn main<T: Plugin + Default>(callback: HostCallbackProc) -> *mut AEffect {
+pub fn main<T: Plugin + NewFromHost>(callback: HostCallbackProc) -> *mut AEffect {
     // Create a Box containing a zeroed AEffect. This is transmuted into a *mut pointer so that it
     // can be passed into the HostCallback `wrap` method. The AEffect is then updated after the vst
     // object is created so that the host still contains a raw pointer to the AEffect struct.
@@ -261,10 +267,17 @@ mod tests {
     use interfaces;
     use api::AEffect;
     use api::consts::VST_MAGIC;
-    use plugin::{Info, Plugin};
+    use plugin::{Info, Plugin, HostCallback};
+    use ::NewFromHost;
 
     #[derive(Default)]
     struct TestPlugin;
+
+    impl NewFromHost for TestPlugin {
+        fn new(_host: HostCallback) -> Self {
+            Default::default()
+        }
+    }
 
     impl Plugin for TestPlugin {
         fn get_info(&self) -> Info {

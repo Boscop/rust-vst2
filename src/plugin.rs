@@ -455,50 +455,6 @@ pub trait Plugin {
     /// This method must return an `Info` struct.
     fn get_info(&self) -> Info;
 
-    /// Called during initialization to pass a `HostCallback` to the plugin.
-    ///
-    /// This method can be overriden to set `host` as a field in the plugin struct.
-    ///
-    /// # Example
-    ///
-    /// ```
-    /// // ...
-    /// # extern crate vst2;
-    /// # #[macro_use] extern crate log;
-    /// # use vst2::plugin::{Plugin, Info};
-    /// use vst2::plugin::HostCallback;
-    ///
-    /// # #[derive(Default)]
-    /// struct ExamplePlugin {
-    ///     host: HostCallback
-    /// }
-    ///
-    /// impl Plugin for ExamplePlugin {
-    ///     fn new(host: HostCallback) -> ExamplePlugin {
-    ///         ExamplePlugin {
-    ///             host: host
-    ///         }
-    ///     }
-    ///
-    ///     fn init(&mut self) {
-    ///         info!("loaded with host vst version: {}", self.host.vst_version());
-    ///     }
-    ///
-    ///     // ...
-    /// #     fn get_info(&self) -> Info {
-    /// #         Info {
-    /// #             name: "Example Plugin".to_string(),
-    /// #             ..Default::default()
-    /// #         }
-    /// #     }
-    /// }
-    ///
-    /// # fn main() {}
-    /// ```
-    fn new(host: HostCallback) -> Self where Self: Sized + Default {
-        Default::default()
-    }
-
     /// Called when plugin is fully initialized.
     fn init(&mut self) { trace!("Initialized vst plugin."); }
 
@@ -832,6 +788,51 @@ impl Host for HostCallback {
     }
 }
 
+/// Plugins must implement this trait.
+pub trait NewFromHost {
+    /// Called during initialization to pass a `HostCallback` to the plugin.
+    ///
+    /// This method can be overriden to set `host` as a field in the plugin struct.
+    ///
+    /// # Example
+    ///
+    /// ```
+    /// // ...
+    /// # extern crate vst2;
+    /// # #[macro_use] extern crate log;
+    /// # use vst2::plugin::{Plugin, Info, NewFromHost, HostCallback};
+    ///
+    /// struct ExamplePlugin {
+    ///     host: HostCallback
+    /// }
+    ///
+    /// impl NewFromHost for ExamplePlugin {
+    ///     fn new(host: HostCallback) -> Self {
+    ///         ExamplePlugin {
+    ///             host: host
+    ///         }
+    ///     }
+    /// }
+    ///
+    /// impl Plugin for ExamplePlugin {
+    ///     fn init(&mut self) {
+    ///         info!("loaded with host vst version: {}", self.host.vst_version());
+    ///     }
+    ///
+    ///     // ...
+    /// #     fn get_info(&self) -> Info {
+    /// #         Info {
+    /// #             name: "Example Plugin".to_string(),
+    /// #             ..Default::default()
+    /// #         }
+    /// #     }
+    /// }
+    ///
+    /// # fn main() {}
+    /// ```
+    fn new(host: HostCallback) -> Self where Self: Sized;
+}
+
 #[cfg(test)]
 mod tests {
     use std::ptr;
@@ -848,11 +849,19 @@ mod tests {
             use main;
             use api::AEffect;
             use host::{Host, OpCode};
-            use plugin::{HostCallback, Info, Plugin};
+            use plugin::{HostCallback, Info, Plugin, NewFromHost};
 
             $(#[$attr]) *
             struct TestPlugin {
                 host: HostCallback
+            }
+
+            impl NewFromHost for TestPlugin {
+                fn new(host: HostCallback) -> Self {
+                    TestPlugin {
+                        host: host
+                    }
+                }
             }
 
             impl Plugin for TestPlugin {
@@ -860,12 +869,6 @@ mod tests {
                     Info {
                         name: "Test Plugin".to_string(),
                         ..Default::default()
-                    }
-                }
-
-                fn new(host: HostCallback) -> TestPlugin {
-                    TestPlugin {
-                        host: host
                     }
                 }
 
